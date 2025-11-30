@@ -4,7 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HR Resume Analyzer</title>
+    <link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
     <style>
         :root {
             --primary-color: #2c3e50;
@@ -37,7 +41,7 @@
         header {
             background-color: var(--primary-color);
             color: white;
-            padding: 20px 0;
+            padding: 15px 0;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
         
@@ -50,15 +54,20 @@
         .logo {
             font-size: 24px;
             font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .logo-icon {
+            font-size: 28px;
         }
         
         nav ul {
             display: flex;
             list-style: none;
-        }
-        
-        nav ul li {
-            margin-left: 20px;
+            align-items: center;
+            gap: 20px;
         }
         
         nav ul li a {
@@ -71,6 +80,179 @@
             color: var(--secondary-color);
         }
         
+        .auth-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--secondary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .auth-btn {
+            background: transparent;
+            color: white;
+            border: 1px solid white;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .auth-btn:hover {
+            background: white;
+            color: var(--primary-color);
+        }
+        
+        /* Модальные окна */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        
+        .modal-content {
+            background-color: white;
+            margin: 10% auto;
+            padding: 30px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .close {
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .close:hover {
+            color: black;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        
+        .form-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .btn {
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        
+        .btn:hover {
+            background-color: #2980b9;
+        }
+        
+        .btn-google {
+            background-color: #db4437;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .btn-google:hover {
+            background-color: #c23321;
+        }
+        
+        .btn-secondary {
+            background-color: #95a5a6;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #7f8c8d;
+        }
+        
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--secondary-color);
+            color: var(--secondary-color);
+        }
+        
+        .btn-outline:hover {
+            background: var(--secondary-color);
+            color: white;
+        }
+        
+        .divider {
+            text-align: center;
+            margin: 20px 0;
+            position: relative;
+        }
+        
+        .divider::before {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: #ddd;
+        }
+        
+        .divider span {
+            background: white;
+            padding: 0 15px;
+            color: #666;
+        }
+
+        /* Остальные стили остаются прежними */
         .hero {
             background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
             color: white;
@@ -127,34 +309,6 @@
             resize: vertical;
             font-size: 16px;
             margin-bottom: 15px;
-        }
-        
-        .btn {
-            background-color: var(--secondary-color);
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 16px;
-            transition: background-color 0.3s;
-        }
-        
-        .btn:hover {
-            background-color: #2980b9;
-        }
-        
-        .btn:disabled {
-            background-color: #bdc3c7;
-            cursor: not-allowed;
-        }
-        
-        .btn-secondary {
-            background-color: #95a5a6;
-        }
-        
-        .btn-secondary:hover {
-            background-color: #7f8c8d;
         }
         
         .loading {
@@ -333,17 +487,113 @@
             color: #666;
             margin-top: 5px;
         }
+
+        .protected-content {
+            display: none;
+        }
+
+        .login-prompt {
+            text-align: center;
+            padding: 60px 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin: 40px 0;
+        }
+
+        .login-prompt h2 {
+            margin-bottom: 20px;
+            color: var(--primary-color);
+        }
     </style>
 </head>
 <body>
+    <!-- Модальное окно входа -->
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Вход в систему</h2>
+                <span class="close">&times;</span>
+            </div>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="loginEmail">Email</label>
+                    <input type="email" id="loginEmail" required>
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">Пароль</label>
+                    <input type="password" id="loginPassword" required>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn">Войти</button>
+                    <div class="divider"><span>или</span></div>
+                    <button type="button" id="googleLogin" class="btn btn-google">
+                        <span>🚀</span> Войти через Google
+                    </button>
+                    <button type="button" id="showRegister" class="btn btn-outline">
+                        Создать аккаунт
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Модальное окно регистрации -->
+    <div id="registerModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Создать аккаунт</h2>
+                <span class="close">&times;</span>
+            </div>
+            <form id="registerForm">
+                <div class="form-group">
+                    <label for="registerName">Имя</label>
+                    <input type="text" id="registerName" required>
+                </div>
+                <div class="form-group">
+                    <label for="registerEmail">Email</label>
+                    <input type="email" id="registerEmail" required>
+                </div>
+                <div class="form-group">
+                    <label for="registerPassword">Пароль</label>
+                    <input type="password" id="registerPassword" required minlength="6">
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn">Создать аккаунт</button>
+                    <div class="divider"><span>или</span></div>
+                    <button type="button" id="googleRegister" class="btn btn-google">
+                        <span>🚀</span> Зарегистрироваться через Google
+                    </button>
+                    <button type="button" id="showLogin" class="btn btn-outline">
+                        Уже есть аккаунт
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <header>
         <div class="container header-content">
-            <div class="logo">HR Resume Analyzer</div>
+            <div class="logo">
+                <span class="logo-icon">🔍</span>
+                HR Resume Analyzer
+            </div>
             <nav>
                 <ul>
                     <li><a href="#analyze">Анализ резюме</a></li>
                     <li><a href="#features">Возможности</a></li>
                     <li><a href="#about">О проекте</a></li>
+                    <li class="auth-section">
+                        <div id="userInfo" class="user-info" style="display: none;">
+                            <div class="user-avatar" id="userAvatar">U</div>
+                            <span id="userName">Пользователь</span>
+                            <button id="logoutBtn" class="auth-btn">Выйти</button>
+                        </div>
+                        <div id="authButtons">
+                            <button id="loginBtn" class="auth-btn">Войти</button>
+                            <button id="registerBtn" class="auth-btn">Регистрация</button>
+                        </div>
+                    </li>
                 </ul>
             </nav>
         </div>
@@ -351,114 +601,160 @@
     
     <section class="hero">
         <div class="container">
-            <h1>Упростите работу с резюме</h1>
+            <h1>🔍 Упростите работу с резюме</h1>
             <p>Автоматически извлекайте ключевую информацию из резюме: образование, опыт работы, навыки и многое другое</p>
         </div>
     </section>
     
     <div class="container">
-        <div class="api-status">
-            ✅ Система готова к работе с YandexGPT | Поддержка PDF и TXT файлов
+        <!-- Контент для неавторизованных пользователей -->
+        <div id="loginPrompt" class="login-prompt">
+            <h2>🔐 Войдите в систему</h2>
+            <p>Для доступа к анализу резюме требуется авторизация</p>
+            <button id="promptLogin" class="btn" style="margin-top: 20px;">Войти или Зарегистрироваться</button>
         </div>
-        
-        <section id="analyze" class="main-content">
-            <div class="input-section">
-                <h2 class="section-title">Загрузите резюме</h2>
-                
-                <div class="upload-options">
-                    <label for="pdf-input" class="file-upload-label">
-                        📄 Загрузить PDF
-                    </label>
-                    <label for="file-input" class="file-upload-label">
-                        📝 Загрузить TXT
-                    </label>
-                    <button id="clear-all" class="btn btn-secondary">Очистить все</button>
-                </div>
-                
-                <input type="file" id="pdf-input" accept=".pdf">
-                <input type="file" id="file-input" accept=".txt">
-                
-                <div class="pdf-preview" id="pdf-preview">
-                    <div class="pdf-icon">📄</div>
-                    <h3>PDF документ загружен</h3>
-                    <p id="pdf-info">Идет обработка...</p>
-                    <div class="loading" id="pdf-loading">
+
+        <!-- Основной контент (только для авторизованных) -->
+        <div id="mainContent" class="protected-content">
+            <div class="api-status">
+                ✅ Система готова к работе с YandexGPT | Поддержка PDF и TXT файлов
+            </div>
+            
+            <section id="analyze" class="main-content">
+                <div class="input-section">
+                    <h2 class="section-title">📄 Загрузите резюме</h2>
+                    
+                    <div class="upload-options">
+                        <label for="pdf-input" class="file-upload-label">
+                            📄 Загрузить PDF
+                        </label>
+                        <label for="file-input" class="file-upload-label">
+                            📝 Загрузить TXT
+                        </label>
+                        <button id="clear-all" class="btn btn-secondary">🗑️ Очистить все</button>
+                    </div>
+                    
+                    <input type="file" id="pdf-input" accept=".pdf">
+                    <input type="file" id="file-input" accept=".txt">
+                    
+                    <div class="pdf-preview" id="pdf-preview">
+                        <div class="pdf-icon">📄</div>
+                        <h3>PDF документ загружен</h3>
+                        <p id="pdf-info">Идет обработка...</p>
+                        <div class="loading" id="pdf-loading">
+                            <div class="spinner"></div>
+                            <p>Извлекаем текст из PDF...</p>
+                        </div>
+                    </div>
+                    
+                    <div class="file-info" id="file-info">
+                        <strong>📁 Загружен файл:</strong> <span id="file-name"></span>
+                        <div class="file-stats" id="file-stats"></div>
+                    </div>
+                    
+                    <textarea id="resume-text" placeholder="Или вставьте текст резюме здесь..."></textarea>
+                    
+                    <div class="notification" id="notification"></div>
+                    <button id="analyze-btn" class="btn">🔍 Проанализировать резюме</button>
+                    
+                    <div class="loading" id="loading">
                         <div class="spinner"></div>
-                        <p>Извлекаем текст из PDF...</p>
+                        <p>Анализируем резюме с помощью YandexGPT...</p>
                     </div>
                 </div>
                 
-                <div class="file-info" id="file-info">
-                    <strong>📁 Загружен файл:</strong> <span id="file-name"></span>
-                    <div class="file-stats" id="file-stats"></div>
+                <div class="output-section">
+                    <h2 class="section-title">📊 Извлеченная информация</h2>
+                    <div class="result-container" id="result-container">
+                        <p>Результаты анализа появятся здесь после обработки резюме.</p>
+                    </div>
                 </div>
-                
-                <textarea id="resume-text" placeholder="Или вставьте текст резюме здесь..."></textarea>
-                
-                <div class="notification" id="notification"></div>
-                <button id="analyze-btn" class="btn">Проанализировать резюме</button>
-                
-                <div class="loading" id="loading">
-                    <div class="spinner"></div>
-                    <p>Анализируем резюме с помощью YandexGPT...</p>
-                </div>
-            </div>
+            </section>
             
-            <div class="output-section">
-                <h2 class="section-title">Извлеченная информация</h2>
-                <div class="result-container" id="result-container">
-                    <p>Результаты анализа появятся здесь после обработки резюме.</p>
+            <section id="features">
+                <h2 class="section-title" style="text-align: center;">🎯 Что мы извлекаем из резюме</h2>
+                <div class="features">
+                    <div class="feature-card">
+                        <div class="feature-icon">👨‍🎓</div>
+                        <h3>Образование</h3>
+                        <p>Учебные заведения, специальности, годы обучения</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">💼</div>
+                        <h3>Опыт работы</h3>
+                        <p>Места работы, должности, периоды, обязанности</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🛠️</div>
+                        <h3>Навыки</h3>
+                        <p>Профессиональные навыки, технологии, инструменты</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">📞</div>
+                        <h3>Контактная информация</h3>
+                        <p>Телефон, email, ссылки на профили</p>
+                    </div>
                 </div>
-            </div>
-        </section>
-        
-        <section id="features">
-            <h2 class="section-title" style="text-align: center;">Что мы извлекаем из резюме</h2>
-            <div class="features">
-                <div class="feature-card">
-                    <div class="feature-icon">👨‍🎓</div>
-                    <h3>Образование</h3>
-                    <p>Учебные заведения, специальности, годы обучения</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">💼</div>
-                    <h3>Опыт работы</h3>
-                    <p>Места работы, должности, периоды, обязанности</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">🛠️</div>
-                    <h3>Навыки</h3>
-                    <p>Профессиональные навыки, технологии, инструменты</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">📞</div>
-                    <h3>Контактная информация</h3>
-                    <p>Телефон, email, ссылки на профили</p>
-                </div>
-            </div>
-        </section>
-        
-        <section id="about" style="margin-top: 40px;">
-            <h2 class="section-title">О проекте</h2>
-            <p>Этот инструмент использует искусственный интеллект YandexGPT для автоматического анализа резюме и извлечения ключевой информации. Он помогает HR-специалистам экономить время и быстро оценивать кандидатов.</p>
-            <p>Просто загрузите PDF-файл, текстовый файл или вставьте текст резюме, и система автоматически выделит важные детали: образование, опыт работы, навыки и контактную информацию.</p>
-        </section>
+            </section>
+            
+            <section id="about" style="margin-top: 40px;">
+                <h2 class="section-title">ℹ️ О проекте</h2>
+                <p>Этот инструмент использует искусственный интеллект YandexGPT для автоматического анализа резюме и извлечения ключевой информации. Он помогает HR-специалистам экономить время и быстро оценивать кандидатов.</p>
+                <p>Просто загрузите PDF-файл, текстовый файл или вставьте текст резюме, и система автоматически выделит важные детали: образование, опыт работы, навыки и контактную информацию.</p>
+            </section>
+        </div>
     </div>
     
     <footer>
         <div class="container">
-            <p>HR Resume Analyzer &copy; 2025 | Упрощаем работу HR-специалистов</p>
+            <p>HR Resume Analyzer &copy; 2025 | 🔍 Упрощаем работу HR-специалистов</p>
         </div>
     </footer>
 
     <script>
-        // URL Cloud Function (захардкожен)
+        // Firebase конфигурация (замени на свою)
+       const firebaseConfig = {
+  apiKey: "AIzaSyB7LRvg7EiE87LCVCyIM1QCYSD971uOsh0",
+  authDomain: "hr-resume-analyzer-d572e.firebaseapp.com",
+  projectId: "hr-resume-analyzer-d572e",
+  storageBucket: "hr-resume-analyzer-d572e.firebasestorage.app",
+  messagingSenderId: "134713075474",
+  appId: "1:134713075474:web:212f0d5d4ecfa7c504f5cb",
+  measurementId: "G-E4CK5WG5JY"
+};
+
+        // Инициализация Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+
+        // URL Cloud Function
         const CLOUD_FUNCTION_URL = 'https://functions.yandexcloud.net/d4eudmm1qr4smp94v6ts';
 
         // Инициализация PDF.js
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
 
         document.addEventListener('DOMContentLoaded', function() {
+            // Элементы аутентификации
+            const loginBtn = document.getElementById('loginBtn');
+            const registerBtn = document.getElementById('registerBtn');
+            const logoutBtn = document.getElementById('logoutBtn');
+            const loginModal = document.getElementById('loginModal');
+            const registerModal = document.getElementById('registerModal');
+            const loginForm = document.getElementById('loginForm');
+            const registerForm = document.getElementById('registerForm');
+            const googleLogin = document.getElementById('googleLogin');
+            const googleRegister = document.getElementById('googleRegister');
+            const showRegister = document.getElementById('showRegister');
+            const showLogin = document.getElementById('showLogin');
+            const userInfo = document.getElementById('userInfo');
+            const authButtons = document.getElementById('authButtons');
+            const userName = document.getElementById('userName');
+            const userAvatar = document.getElementById('userAvatar');
+            const promptLogin = document.getElementById('promptLogin');
+            const loginPrompt = document.getElementById('loginPrompt');
+            const mainContent = document.getElementById('mainContent');
+
+            // Основные элементы
             const analyzeBtn = document.getElementById('analyze-btn');
             const resumeText = document.getElementById('resume-text');
             const resultContainer = document.getElementById('result-container');
@@ -476,7 +772,121 @@
 
             let currentFileType = null;
 
-            // Очистка всех полей
+            // Управление модальными окнами
+            function showModal(modal) {
+                modal.style.display = 'block';
+            }
+
+            function hideModal(modal) {
+                modal.style.display = 'none';
+            }
+
+            // Закрытие модальных окон
+            document.querySelectorAll('.close').forEach(closeBtn => {
+                closeBtn.addEventListener('click', function() {
+                    hideModal(loginModal);
+                    hideModal(registerModal);
+                });
+            });
+
+            // Переключение между модальными окнами
+            showRegister.addEventListener('click', () => {
+                hideModal(loginModal);
+                showModal(registerModal);
+            });
+
+            showLogin.addEventListener('click', () => {
+                hideModal(registerModal);
+                showModal(loginModal);
+            });
+
+            promptLogin.addEventListener('click', () => {
+                showModal(loginModal);
+            });
+
+            // Открытие модальных окон
+            loginBtn.addEventListener('click', () => showModal(loginModal));
+            registerBtn.addEventListener('click', () => showModal(registerModal));
+
+            // Обработка форм
+            loginForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const email = document.getElementById('loginEmail').value;
+                const password = document.getElementById('loginPassword').value;
+
+                try {
+                    await auth.signInWithEmailAndPassword(email, password);
+                    hideModal(loginModal);
+                    showNotification('Вход выполнен успешно!', 'success');
+                } catch (error) {
+                    showNotification(`Ошибка входа: ${error.message}`, 'error');
+                }
+            });
+
+            registerForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const name = document.getElementById('registerName').value;
+                const email = document.getElementById('registerEmail').value;
+                const password = document.getElementById('registerPassword').value;
+
+                try {
+                    const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                    // Здесь можно обновить профиль пользователя
+                    await userCredential.user.updateProfile({
+                        displayName: name
+                    });
+                    hideModal(registerModal);
+                    showNotification('Аккаунт создан успешно!', 'success');
+                } catch (error) {
+                    showNotification(`Ошибка регистрации: ${error.message}`, 'error');
+                }
+            });
+
+            // Google аутентификация
+            async function signInWithGoogle() {
+                const provider = new firebase.auth.GoogleAuthProvider();
+                try {
+                    await auth.signInWithPopup(provider);
+                    hideModal(loginModal);
+                    hideModal(registerModal);
+                    showNotification('Вход через Google выполнен!', 'success');
+                } catch (error) {
+                    showNotification(`Ошибка Google аутентификации: ${error.message}`, 'error');
+                }
+            }
+
+            googleLogin.addEventListener('click', signInWithGoogle);
+            googleRegister.addEventListener('click', signInWithGoogle);
+
+            // Выход из системы
+            logoutBtn.addEventListener('click', () => {
+                auth.signOut();
+                showNotification('Вы вышли из системы', 'success');
+            });
+
+            // Отслеживание состояния аутентификации
+            auth.onAuthStateChanged((user) => {
+                if (user) {
+                    // Пользователь авторизован
+                    userInfo.style.display = 'flex';
+                    authButtons.style.display = 'none';
+                    loginPrompt.style.display = 'none';
+                    mainContent.style.display = 'block';
+                    
+                    // Обновляем информацию о пользователе
+                    const displayName = user.displayName || user.email.split('@')[0];
+                    userName.textContent = displayName;
+                    userAvatar.textContent = displayName.charAt(0).toUpperCase();
+                } else {
+                    // Пользователь не авторизован
+                    userInfo.style.display = 'none';
+                    authButtons.style.display = 'block';
+                    loginPrompt.style.display = 'block';
+                    mainContent.style.display = 'none';
+                }
+            });
+
+            // Остальной код обработки файлов и анализа остается прежним
             clearAllBtn.addEventListener('click', function() {
                 resumeText.value = '';
                 fileInput.value = '';
@@ -488,13 +898,12 @@
                 showNotification('Все поля очищены', 'success');
             });
 
-            // Обработчик загрузки TXT файла
             fileInput.addEventListener('change', function(e) {
                 const file = e.target.files[0];
                 if (!file) return;
 
                 currentFileType = 'txt';
-                pdfInput.value = ''; // Сбрасываем PDF input
+                pdfInput.value = '';
                 pdfPreview.classList.remove('active');
 
                 if (file.type === 'text/plain') {
@@ -513,13 +922,12 @@
                 }
             });
 
-            // Обработчик загрузки PDF файла
             pdfInput.addEventListener('change', function(e) {
                 const file = e.target.files[0];
                 if (!file) return;
 
                 currentFileType = 'pdf';
-                fileInput.value = ''; // Сбрасываем TXT input
+                fileInput.value = '';
                 fileInfo.style.display = 'none';
                 
                 if (file.type === 'application/pdf') {
@@ -535,7 +943,6 @@
                 }
             });
 
-            // Функция для извлечения текста из PDF
             async function extractTextFromPDF(file) {
                 try {
                     const arrayBuffer = await file.arrayBuffer();
@@ -544,7 +951,6 @@
                     let fullText = '';
                     const pageCount = pdf.numPages;
                     
-                    // Извлекаем текст со всех страниц
                     for (let pageNum = 1; pageNum <= pageCount; pageNum++) {
                         const page = await pdf.getPage(pageNum);
                         const textContent = await page.getTextContent();
@@ -571,7 +977,6 @@
                 }
             }
 
-            // Обработчик анализа резюме
             analyzeBtn.addEventListener('click', async function() {
                 const text = resumeText.value.trim();
                 
@@ -585,7 +990,6 @@
                     return;
                 }
                 
-                // Показать индикатор загрузки
                 loading.style.display = 'block';
                 analyzeBtn.disabled = true;
                 
@@ -603,13 +1007,11 @@
                     console.error('Ошибка при анализе резюме:', error);
                     showNotification('Ошибка при анализе резюме: ' + error.message, 'error');
                 } finally {
-                    // Скрыть индикатор загрузки
                     loading.style.display = 'none';
                     analyzeBtn.disabled = false;
                 }
             });
             
-            // Функция для анализа резюме через Cloud Function
             async function analyzeResumeWithCloudFunction(resumeText) {
                 try {
                     const response = await fetch(CLOUD_FUNCTION_URL, {
@@ -626,11 +1028,9 @@
                         throw new Error(`HTTP error! status: ${response.status}`);
                     }
                     
-                    const result = await response.json();
-                    return result;
+                    return await response.json();
                     
                 } catch (fetchError) {
-                    console.error('Ошибка fetch:', fetchError);
                     return {
                         success: false,
                         error: "Ошибка подключения к серверу: " + fetchError.message
@@ -638,19 +1038,15 @@
                 }
             }
             
-            // Функция для отображения результатов
             function displayResults(data) {
                 let html = '';
                 
-                // Обрабатываем ответ от YandexGPT
                 if (data.result && data.result.alternatives && data.result.alternatives[0]) {
                     const aiResponse = data.result.alternatives[0].message.text;
                     
                     try {
-                        // Пытаемся распарсить JSON из ответа AI
                         let jsonText = aiResponse;
                         
-                        // Очищаем от markdown оберток
                         if (aiResponse.includes('```json')) {
                             jsonText = aiResponse.split('```json')[1].split('```')[0].trim();
                         } else if (aiResponse.includes('```')) {
@@ -659,7 +1055,6 @@
                         
                         const parsedData = JSON.parse(jsonText);
                         
-                        // Отображаем структурированные данные
                         if (parsedData.education) {
                             html += `
                                 <div class="result-item">
@@ -719,7 +1114,6 @@
                         }
                         
                     } catch (parseError) {
-                        // Если не удалось распарсить JSON, показываем raw ответ
                         html = `
                             <div class="result-item">
                                 <div class="result-title">Ответ от YandexGPT</div>
@@ -734,7 +1128,6 @@
                 resultContainer.innerHTML = html;
             }
             
-            // Функция для показа уведомлений
             function showNotification(message, type) {
                 notification.textContent = message;
                 notification.className = 'notification ' + type;
@@ -745,7 +1138,7 @@
                 }, 5000);
             }
             
-            // Инициализация с примером резюме для демонстрации
+            // Пример резюме
             resumeText.value = `Иванов Иван Иванович
 
 Контактная информация:
@@ -779,5 +1172,4 @@ Email: ivanov@example.com
         });
     </script>
 </body>
-
 </html>
