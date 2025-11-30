@@ -253,7 +253,6 @@
             color: #666;
         }
 
-        /* Остальные стили остаются прежними */
         .hero {
             background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
             color: white;
@@ -337,30 +336,75 @@
             border-radius: 4px;
             padding: 15px;
             margin-top: 20px;
-            max-height: 400px;
+            max-height: 600px;
             overflow-y: auto;
         }
         
+        .result-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: white;
+            border-radius: 6px;
+            border-left: 4px solid var(--secondary-color);
+        }
+        
+        .result-section-title {
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
         .result-item {
-            margin-bottom: 15px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid #ddd;
+            margin-bottom: 8px;
+            padding: 8px 12px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            border-left: 3px solid var(--success-color);
         }
         
         .result-item:last-child {
-            border-bottom: none;
             margin-bottom: 0;
-            padding-bottom: 0;
         }
         
-        .result-title {
-            font-weight: bold;
-            color: var(--primary-color);
-            margin-bottom: 5px;
-        }
-        
-        .result-content {
+        .result-subitem {
+            margin-left: 15px;
+            padding: 4px 0;
             color: var(--dark-color);
+        }
+        
+        .skills-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 8px;
+            margin-top: 8px;
+        }
+        
+        .skill-tag {
+            background: var(--secondary-color);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            text-align: center;
+        }
+        
+        .contact-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 8px;
+        }
+        
+        .contact-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 10px;
+            background: #e8f4fd;
+            border-radius: 4px;
         }
         
         footer {
@@ -507,7 +551,40 @@
             color: var(--primary-color);
         }
 
-        /* Новые стили для анализа соответствия */
+        .candidate-summary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .summary-item {
+            text-align: center;
+            padding: 10px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 6px;
+        }
+
+        .summary-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .summary-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        /* Стили для анализа соответствия */
         .match-section {
             background-color: white;
             border-radius: 8px;
@@ -534,7 +611,7 @@
         }
 
         .match-input textarea {
-            height: 150px;
+            height: 200px;
         }
 
         .match-result {
@@ -680,7 +757,7 @@
     </style>
 </head>
 <body>
-    <!-- Модальные окна входа и регистрации (остаются без изменений) -->
+    <!-- Модальные окна входа и регистрации -->
     <div id="loginModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -789,7 +866,7 @@
         <!-- Основной контент (только для авторизованных) -->
         <div id="mainContent" class="protected-content">
             <div class="api-status">
-                ✅ Система готова к работе с YandexGPT | Поддержка PDF и TXT файлов | Анализ соответствия вакансии
+                ✅ Система готова к работе с YandexGPT | Поддержка PDF и TXT файлов | Структурированный анализ + Соответствие вакансии
             </div>
             
             <section id="analyze" class="main-content">
@@ -836,14 +913,14 @@
                 </div>
                 
                 <div class="output-section">
-                    <h2 class="section-title">📊 Извлеченная информация</h2>
+                    <h2 class="section-title">📊 Результаты анализа</h2>
                     <div class="result-container" id="result-container">
-                        <p>Результаты анализа появятся здесь после обработки резюме.</p>
+                        <p>Здесь появится структурированная информация из резюме после анализа.</p>
                     </div>
                 </div>
             </section>
             
-            <!-- Новая секция анализа соответствия -->
+            <!-- Секция анализа соответствия вакансии -->
             <section id="match" class="match-section">
                 <h2 class="section-title">🎯 Анализ соответствия вакансии</h2>
                 
@@ -959,24 +1036,24 @@
                 <h2 class="section-title" style="text-align: center;">🎯 Что мы извлекаем из резюме</h2>
                 <div class="features">
                     <div class="feature-card">
+                        <div class="feature-icon">👤</div>
+                        <h3>Личная информация</h3>
+                        <p>ФИО, контакты, локация</p>
+                    </div>
+                    <div class="feature-card">
                         <div class="feature-icon">👨‍🎓</div>
                         <h3>Образование</h3>
-                        <p>Учебные заведения, специальности, годы обучения</p>
+                        <p>Учебные заведения, специальности, годы</p>
                     </div>
                     <div class="feature-card">
                         <div class="feature-icon">💼</div>
                         <h3>Опыт работы</h3>
-                        <p>Места работы, должности, периоды, обязанности</p>
-                    </div>
-                    <div class="feature-card">
-                        <div class="feature-icon">🛠️</div>
-                        <h3>Навыки</h3>
-                        <p>Профессиональные навыки, технологии, инструменты</p>
+                        <p>Компании, должности, периоды, обязанности</p>
                     </div>
                     <div class="feature-card">
                         <div class="feature-icon">🎯</div>
                         <h3>Соответствие вакансии</h3>
-                        <p>Оценка соответствия кандидата требованиям вакансии</p>
+                        <p>Оценка соответствия требованиям вакансии</p>
                     </div>
                 </div>
             </section>
@@ -984,7 +1061,7 @@
             <section id="about" style="margin-top: 40px;">
                 <h2 class="section-title">ℹ️ О проекте</h2>
                 <p>Этот инструмент использует искусственный интеллект YandexGPT для автоматического анализа резюме и оценки соответствия кандидатов вакансиям. Он помогает HR-специалистам экономить время и быстро оценивать кандидатов.</p>
-                <p>Просто загрузите PDF-файл, текстовый файл или вставьте текст резюме, и система автоматически выделит важные детали: образование, опыт работы, навыки и оценит соответствие требованиям вакансии.</p>
+                <p>Просто загрузите PDF-файл, текстовый файл или вставьте текст резюме, и система автоматически выделит важные детали в структурированном виде без повторений.</p>
             </section>
         </div>
     </div>
@@ -1018,7 +1095,7 @@
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
 
         document.addEventListener('DOMContentLoaded', function() {
-            // Элементы аутентификации (остаются без изменений)
+            // Элементы аутентификации
             const loginBtn = document.getElementById('loginBtn');
             const registerBtn = document.getElementById('registerBtn');
             const logoutBtn = document.getElementById('logoutBtn');
@@ -1054,7 +1131,7 @@
             const notification = document.getElementById('notification');
             const clearAllBtn = document.getElementById('clear-all');
 
-            // Новые элементы для анализа соответствия
+            // Элементы анализа соответствия
             const jobDescription = document.getElementById('job-description');
             const resumeTextMatch = document.getElementById('resume-text-match');
             const matchBtn = document.getElementById('match-btn');
@@ -1077,8 +1154,9 @@
             const recommendationsList = document.getElementById('recommendations-list');
 
             let currentFileType = null;
+            let currentResumeData = null;
 
-            // Управление модальными окнами (остается без изменений)
+            // Управление модальными окнами
             function showModal(modal) {
                 modal.style.display = 'block';
             }
@@ -1114,7 +1192,7 @@
             loginBtn.addEventListener('click', () => showModal(loginModal));
             registerBtn.addEventListener('click', () => showModal(registerModal));
 
-            // Обработка форм (остается без изменений)
+            // Обработка форм
             loginForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const email = document.getElementById('loginEmail').value;
@@ -1188,7 +1266,7 @@
                 }
             });
 
-            // Обработка файлов и анализ резюме (остается без изменений)
+            // Обработка файлов
             clearAllBtn.addEventListener('click', function() {
                 resumeText.value = '';
                 fileInput.value = '';
@@ -1282,6 +1360,7 @@
                 }
             }
 
+            // Основная функция анализа резюме
             analyzeBtn.addEventListener('click', async function() {
                 const text = resumeText.value.trim();
                 
@@ -1302,7 +1381,8 @@
                     const result = await analyzeResumeWithCloudFunction(text);
                     
                     if (result.success) {
-                        displayResults(result.data);
+                        currentResumeData = result.data;
+                        displayStructuredResults(result.data);
                         // Автоматически заполняем поле для анализа соответствия
                         resumeTextMatch.value = text;
                         showNotification('Резюме успешно проанализировано с помощью YandexGPT', 'success');
@@ -1321,13 +1401,62 @@
             
             async function analyzeResumeWithCloudFunction(resumeText) {
                 try {
+                    // Обновленный промпт для структурированного анализа
+                    const analysisPrompt = `
+Проанализируй резюме и извлеки информацию в структурированном JSON формате. Убери повторения и сгруппируй информацию логически.
+
+Резюме:
+${resumeText}
+
+Верни ответ ТОЛЬКО в формате JSON без дополнительного текста:
+
+{
+  "personal_info": {
+    "full_name": "ФИО",
+    "contacts": {
+      "email": "email",
+      "phone": "телефон",
+      "location": "город"
+    }
+  },
+  "education": [
+    {
+      "institution": "учебное заведение",
+      "faculty": "факультет",
+      "specialty": "специальность",
+      "years": "годы обучения",
+      "degree": "степень"
+    }
+  ],
+  "experience": [
+    {
+      "company": "компания",
+      "position": "должность",
+      "period": "период работы",
+      "responsibilities": ["обязанность 1", "обязанность 2"]
+    }
+  ],
+  "skills": {
+    "technical": ["технический навык 1", "технический навык 2"],
+    "languages": ["язык 1 - уровень", "язык 2 - уровень"],
+    "certifications": ["сертификация 1", "сертификация 2"]
+  },
+  "summary": {
+    "total_experience": "общий опыт в годах",
+    "key_qualifications": ["квалификация 1", "квалификация 2"],
+    "career_level": "уровень (junior/middle/senior)"
+  }
+}
+
+Если какая-то информация отсутствует, оставь поле пустым или null.`;
+
                     const response = await fetch(CLOUD_FUNCTION_URL, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
                         },
                         body: JSON.stringify({
-                            text: resumeText
+                            text: analysisPrompt
                         })
                     });
                     
@@ -1345,7 +1474,7 @@
                 }
             }
             
-            function displayResults(data) {
+            function displayStructuredResults(data) {
                 let html = '';
                 
                 if (data.result && data.result.alternatives && data.result.alternatives[0]) {
@@ -1354,6 +1483,7 @@
                     try {
                         let jsonText = aiResponse;
                         
+                        // Очистка ответа от лишнего текста
                         if (aiResponse.includes('```json')) {
                             jsonText = aiResponse.split('```json')[1].split('```')[0].trim();
                         } else if (aiResponse.includes('```')) {
@@ -1362,69 +1492,18 @@
                         
                         const parsedData = JSON.parse(jsonText);
                         
-                        if (parsedData.education) {
-                            html += `
-                                <div class="result-item">
-                                    <div class="result-title">🎓 Образование</div>
-                                    <div class="result-content">${parsedData.education}</div>
-                                </div>
-                            `;
-                        }
-                        
-                        if (parsedData.experience && parsedData.experience.length > 0) {
-                            html += `
-                                <div class="result-item">
-                                    <div class="result-title">💼 Опыт работы</div>
-                                    <div class="result-content">
-                                        <ul>
-                                            ${parsedData.experience.map(exp => `<li>${exp}</li>`).join('')}
-                                        </ul>
-                                    </div>
-                                </div>
-                            `;
-                        }
-                        
-                        if (parsedData.skills) {
-                            html += `
-                                <div class="result-item">
-                                    <div class="result-title">🛠️ Навыки</div>
-                                    <div class="result-content">${parsedData.skills}</div>
-                                </div>
-                            `;
-                        }
-                        
-                        if (parsedData.contacts) {
-                            html += `
-                                <div class="result-item">
-                                    <div class="result-title">📞 Контакты</div>
-                                    <div class="result-content">${parsedData.contacts}</div>
-                                </div>
-                            `;
-                        }
-                        
-                        if (parsedData.languages) {
-                            html += `
-                                <div class="result-item">
-                                    <div class="result-title">🌐 Языки</div>
-                                    <div class="result-content">${parsedData.languages}</div>
-                                </div>
-                            `;
-                        }
-                        
-                        if (parsedData.summary) {
-                            html += `
-                                <div class="result-item">
-                                    <div class="result-title">📋 Краткое резюме</div>
-                                    <div class="result-content">${parsedData.summary}</div>
-                                </div>
-                            `;
-                        }
+                        // Создание структурированного вывода
+                        html = createStructuredHTML(parsedData);
                         
                     } catch (parseError) {
+                        console.error('Ошибка парсинга JSON:', parseError);
                         html = `
-                            <div class="result-item">
-                                <div class="result-title">Ответ от YandexGPT</div>
-                                <div class="result-content"><pre>${aiResponse}</pre></div>
+                            <div class="result-section">
+                                <div class="result-section-title">❌ Ошибка анализа</div>
+                                <div class="result-content">
+                                    <p>Не удалось обработать ответ от ИИ. Сырой ответ:</p>
+                                    <pre>${aiResponse}</pre>
+                                </div>
                             </div>
                         `;
                     }
@@ -1435,7 +1514,185 @@
                 resultContainer.innerHTML = html;
             }
 
-            // Новая функция для анализа соответствия
+            function createStructuredHTML(data) {
+                let html = '';
+                
+                // Заголовок с основной информацией
+                if (data.personal_info && data.personal_info.full_name) {
+                    html += `
+                        <div class="candidate-summary">
+                            <h3>👤 ${data.personal_info.full_name}</h3>
+                            <div class="summary-grid">
+                                ${data.summary && data.summary.total_experience ? `
+                                    <div class="summary-item">
+                                        <div class="summary-value">${data.summary.total_experience}</div>
+                                        <div class="summary-label">Опыт работы</div>
+                                    </div>
+                                ` : ''}
+                                ${data.summary && data.summary.career_level ? `
+                                    <div class="summary-item">
+                                        <div class="summary-value">${data.summary.career_level}</div>
+                                        <div class="summary-label">Уровень</div>
+                                    </div>
+                                ` : ''}
+                                ${data.education && data.education.length > 0 ? `
+                                    <div class="summary-item">
+                                        <div class="summary-value">${data.education.length}</div>
+                                        <div class="summary-label">Образование</div>
+                                    </div>
+                                ` : ''}
+                                ${data.experience && data.experience.length > 0 ? `
+                                    <div class="summary-item">
+                                        <div class="summary-value">${data.experience.length}</div>
+                                        <div class="summary-label">Места работы</div>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    `;
+                }
+
+                // Контактная информация
+                if (data.personal_info && data.personal_info.contacts) {
+                    const contacts = data.personal_info.contacts;
+                    html += `
+                        <div class="result-section">
+                            <div class="result-section-title">📞 Контактная информация</div>
+                            <div class="contact-info">
+                                ${contacts.email ? `
+                                    <div class="contact-item">
+                                        <span>📧</span>
+                                        <span>${contacts.email}</span>
+                                    </div>
+                                ` : ''}
+                                ${contacts.phone ? `
+                                    <div class="contact-item">
+                                        <span>📱</span>
+                                        <span>${contacts.phone}</span>
+                                    </div>
+                                ` : ''}
+                                ${contacts.location ? `
+                                    <div class="contact-item">
+                                        <span>📍</span>
+                                        <span>${contacts.location}</span>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    `;
+                }
+
+                // Образование
+                if (data.education && data.education.length > 0) {
+                    html += `
+                        <div class="result-section">
+                            <div class="result-section-title">🎓 Образование</div>
+                    `;
+                    
+                    data.education.forEach(edu => {
+                        html += `
+                            <div class="result-item">
+                                <strong>${edu.institution || 'Не указано'}</strong>
+                                ${edu.faculty ? `<div class="result-subitem">Факультет: ${edu.faculty}</div>` : ''}
+                                ${edu.specialty ? `<div class="result-subitem">Специальность: ${edu.specialty}</div>` : ''}
+                                ${edu.years ? `<div class="result-subitem">Период: ${edu.years}</div>` : ''}
+                                ${edu.degree ? `<div class="result-subitem">Степень: ${edu.degree}</div>` : ''}
+                            </div>
+                        `;
+                    });
+                    
+                    html += `</div>`;
+                }
+
+                // Опыт работы
+                if (data.experience && data.experience.length > 0) {
+                    html += `
+                        <div class="result-section">
+                            <div class="result-section-title">💼 Опыт работы</div>
+                    `;
+                    
+                    data.experience.forEach(exp => {
+                        html += `
+                            <div class="result-item">
+                                <strong>${exp.company || 'Не указано'}</strong>
+                                ${exp.position ? `<div class="result-subitem">Должность: ${exp.position}</div>` : ''}
+                                ${exp.period ? `<div class="result-subitem">Период: ${exp.period}</div>` : ''}
+                                ${exp.responsibilities && exp.responsibilities.length > 0 ? `
+                                    <div class="result-subitem">
+                                        <strong>Обязанности:</strong>
+                                        <ul>
+                                            ${exp.responsibilities.map(resp => `<li>${resp}</li>`).join('')}
+                                        </ul>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        `;
+                    });
+                    
+                    html += `</div>`;
+                }
+
+                // Навыки
+                if (data.skills) {
+                    html += `
+                        <div class="result-section">
+                            <div class="result-section-title">🛠️ Навыки и компетенции</div>
+                    `;
+                    
+                    if (data.skills.technical && data.skills.technical.length > 0) {
+                        html += `
+                            <div class="result-item">
+                                <strong>Технические навыки:</strong>
+                                <div class="skills-grid">
+                                    ${data.skills.technical.map(skill => `<div class="skill-tag">${skill}</div>`).join('')}
+                                </div>
+                            </div>
+                        `;
+                    }
+                    
+                    if (data.skills.languages && data.skills.languages.length > 0) {
+                        html += `
+                            <div class="result-item">
+                                <strong>Языки:</strong>
+                                <div class="skills-grid">
+                                    ${data.skills.languages.map(lang => `<div class="skill-tag">${lang}</div>`).join('')}
+                                </div>
+                            </div>
+                        `;
+                    }
+                    
+                    if (data.skills.certifications && data.skills.certifications.length > 0) {
+                        html += `
+                            <div class="result-item">
+                                <strong>Сертификации:</strong>
+                                <ul>
+                                    ${data.skills.certifications.map(cert => `<li>${cert}</li>`).join('')}
+                                </ul>
+                            </div>
+                        `;
+                    }
+                    
+                    html += `</div>`;
+                }
+
+                // Ключевые квалификации
+                if (data.summary && data.summary.key_qualifications && data.summary.key_qualifications.length > 0) {
+                    html += `
+                        <div class="result-section">
+                            <div class="result-section-title">⭐ Ключевые квалификации</div>
+                            <div class="result-item">
+                                <ul>
+                                    ${data.summary.key_qualifications.map(qual => `<li>${qual}</li>`).join('')}
+                                </ul>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                return html;
+            }
+
+            // Функции для анализа соответствия вакансии
             matchBtn.addEventListener('click', async function() {
                 const resumeText = resumeTextMatch.value.trim();
                 const jobText = jobDescription.value.trim();
@@ -1748,21 +2005,30 @@ Email: ivanov@example.com
 - Разработка веб-приложений на Python и JavaScript
 - Участие в проектировании архитектуры приложений
 - Тестирование и отладка кода
+- Взаимодействие с командой разработки
 
 2021-2023: ООО "Инновационные решения", Должность: Middle разработчик
 - Разработка и поддержка клиентской части приложений на React
-- Разработка серверной части на Node.js
+- Разработка серверной части на Node.js и Express
 - Оптимизация производительности приложений
+- Участие в код-ревью
+- Менторинг junior-разработчиков
 
 Навыки:
-- Языки программирования: Python, JavaScript, TypeScript
-- Фреймворки: React, Node.js, Express
-- Базы данных: PostgreSQL, MongoDB
-- Инструменты: Git, Docker, Webpack
+- Языки программирования: Python, JavaScript, TypeScript, SQL
+- Фреймворки: React, Node.js, Express, Django
+- Базы данных: PostgreSQL, MongoDB, Redis
+- Инструменты: Git, Docker, Webpack, Jest
+- Методологии: Agile, Scrum, Kanban
 
 Языки:
 - Русский: родной
-- Английский: уровень B2 (средне-продвинутый)`;
+- Английский: уровень B2 (средне-продвинутый)
+
+Дополнительная информация:
+- Сертификация: AWS Certified Developer Associate
+- Участие в opensource проектах
+- Публикации на Хабре о веб-разработке`;
 
             // Автозаполнение поля для анализа соответствия
             resumeTextMatch.value = resumeText.value;
