@@ -9,6 +9,7 @@
     <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
     <style>
         :root {
             --primary-color: #2c3e50;
@@ -1173,6 +1174,7 @@
         // Инициализация Firebase
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
+        const db = firebase.firestore(); // Инициализация Firestore
 
         // URL Cloud Function
         const CLOUD_FUNCTION_URL = 'https://functions.yandexcloud.net/d4eudmm1qr4smp94v6ts';
@@ -1180,7 +1182,207 @@
         // Инициализация PDF.js
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
 
+        // =================== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ И ФУНКЦИИ ===================
+        
+        // Переменные для элементов статистики
+        let todayCount = null;
+        let weekCount = null;
+        let monthCount = null;
+        let totalCount = null;
+
+        // Функция инициализации статистики пользователя
+        async function initializeUserStats() {
+            const user = auth.currentUser;
+            if (!user) return;
+            
+            try {
+                const userStatsRef = db.collection('users').doc(user.uid).collection('stats').doc('resume');
+                const statsDoc = await userStatsRef.get();
+                
+                if (!statsDoc.exists) {
+                    const initialStats = {
+                        total: 0,
+                        today: 0,
+                        week: 0,
+                        month: 0,
+                        lastUpdated: null,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    };
+                    
+                    await userStatsRef.set(initialStats);
+                    console.log('Структура статистики создана для пользователя:', user.uid);
+                }
+            } catch (error) {
+                console.error('Ошибка при инициализации статистики:', error);
+            }
+        }
+
+        // Функция обновления статистики
+        async function updateFirebaseStats() {
+            const user = auth.currentUser;
+            if (!user) {
+                console.log('Пользователь не авторизован, статистика не сохранена');
+                return;
+            }
+            
+            try {
+                const now = new Date();
+                const todayStr = now.toISOString().split('T')[0];
+                
+                const statsRef = db.collection('users').doc(user.uid).collection('stats').doc('resume');
+                const statsDoc = await statsRef.get();
+                
+                let stats = statsDoc.exists ? statsDoc.data() : {
+                    total: 0,
+                    today: 0,
+                    week: 0,
+                    month: 0,
+                    lastUpdated: null,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                };
+                
+                const lastUpdated = stats.lastUpdated;
+                stats.total = (stats.total || 0) + 1;
+                
+                if (!lastUpdated || lastUpdated !== todayStr) {
+                    stats.today = 1;
+                } else {
+                    stats.today = (stats.today || 0) + 1;
+                }
+                
+                stats.week = (stats.week || 0) + 1;
+                stats.month = (stats.month || 0) + 1;
+                stats.lastUpdated = todayStr;
+                stats.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
+                
+                await statsRef.set(stats, { merge: true });
+                
+                console.log('Статистика обновлена в Firestore:', stats);
+                
+                // Обновляем отображение статистики на странице
+                await updateStatsDisplay(stats);
+                
+                return stats;
+                
+            } catch (error) {
+                console.error('Ошибка при обновлении статистики:', error);
+                showNotification('Ошибка при сохранении статистики', 'error');
+                return null;
+            }
+        }
+
+        // Функция обновления отображения статистики на странице
+        function updateStatsDisplay(stats) {
+            console.log('Обновление отображения статистики:', stats);
+            
+            if (stats) {
+                // Используем прямое обращение к элементам
+                const todayElement = document.getElementById('today-count');
+                const weekElement = document.getElementById('week-count');
+                const monthElement = document.getElementById('month-count');
+                const totalElement = document.getElementById('total-count');
+                
+                if (todayElement) {
+                    todayElement.textContent = stats.today || 0;
+                    console.log('Обновлен today-count:', stats.today);
+                }
+                
+                if (weekElement) {
+                    weekElement.textContent = stats.week || 0;
+                    console.log('Обновлен week-count:', stats.week);
+                }
+                
+                if (monthElement) {
+                    monthElement.textContent = stats.month || 0;
+                    console.log('Обновлен month-count:', stats.month);
+                }
+                
+                if (totalElement) {
+                    totalElement.textContent = stats.total || 0;
+                    console.log('Обновлен total-count:', stats.total);
+                }
+            }
+        }
+
+        // Функция получения и отображения статистики
+        async function displayFirebaseStats() {
+            const user = auth.currentUser;
+            if (!user) return;
+            
+            try {
+                const statsDoc = await db.collection('users').doc(user.uid).collection('stats').doc('resume').get();
+                
+                if (statsDoc.exists) {
+                    const stats = statsDoc.data();
+                    console.log('Получена статистика для отображения:', stats);
+                    updateStatsDisplay(stats);
+                } else {
+                    console.log('Документ статистики не найден, создаем новый');
+                    await initializeUserStats();
+                    // Устанавливаем нули
+                    updateStatsDisplay({
+                        total: 0,
+                        today: 0,
+                        week: 0,
+                        month: 0
+                    });
+                }
+            } catch (error) {
+                console.error('Ошибка при получении статистики:', error);
+            }
+        }
+
+        // Функция сброса статистики пользователя
+        async function resetFirebaseStats() {
+            const user = auth.currentUser;
+            if (!user) {
+                showNotification('Необходимо авторизоваться для сброса статистики', 'error');
+                return;
+            }
+            
+            if (confirm('Вы уверены, что хотите сбросить всю статистику? Это действие нельзя отменить.')) {
+                try {
+                    const initialStats = {
+                        total: 0,
+                        today: 0,
+                        week: 0,
+                        month: 0,
+                        lastUpdated: null,
+                        resetAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    };
+                    
+                    await db.collection('users').doc(user.uid).collection('stats').doc('resume').set(initialStats);
+                    
+                    // Обновляем отображение
+                    updateStatsDisplay(initialStats);
+                    showNotification('Статистика успешно сброшена', 'success');
+                    
+                } catch (error) {
+                    console.error('Ошибка при сбросе статистики:', error);
+                    showNotification('Ошибка при сбросе статистики', 'error');
+                }
+            }
+        }
+
+        // Функция для уведомлений
+        function showNotification(message, type) {
+            const notification = document.getElementById('notification');
+            if (notification) {
+                notification.textContent = message;
+                notification.className = 'notification ' + type;
+                notification.style.display = 'block';
+                
+                setTimeout(() => {
+                    notification.style.display = 'none';
+                }, 5000);
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM загружен, инициализируем приложение...');
+            
             // Элементы аутентификации
             const loginBtn = document.getElementById('loginBtn');
             const registerBtn = document.getElementById('registerBtn');
@@ -1217,11 +1419,11 @@
             const notification = document.getElementById('notification');
             const clearAllBtn = document.getElementById('clear-all');
 
-            // Элементы статистики
-            const todayCount = document.getElementById('today-count');
-            const weekCount = document.getElementById('week-count');
-            const monthCount = document.getElementById('month-count');
-            const totalCount = document.getElementById('total-count');
+            // Элементы статистики (инициализируем здесь)
+            todayCount = document.getElementById('today-count');
+            weekCount = document.getElementById('week-count');
+            monthCount = document.getElementById('month-count');
+            totalCount = document.getElementById('total-count');
             const resetStatsBtn = document.getElementById('reset-stats');
 
             // Элементы анализа соответствия
@@ -1249,115 +1451,12 @@
             let currentFileType = null;
             let currentResumeData = null;
 
-            // =================== ФУНКЦИИ СТАТИСТИКИ (ИСПРАВЛЕННЫЕ) ===================
-            function initStats() {
-                if (!localStorage.getItem('resumeStats')) {
-                    const initialStats = {
-                        total: 0,
-                        today: 0,
-                        week: 0,
-                        month: 0,
-                        history: []
-                    };
-                    localStorage.setItem('resumeStats', JSON.stringify(initialStats));
-                }
-                // При загрузке пересчитываем статистику
-                recalculateStats();
-                displayStats();
-            }
-            
-            function updateStats() {
-                const now = new Date();
-                const todayStr = now.toISOString().split('T')[0]; // YYYY-MM-DD
-                const timestamp = now.getTime();
-                
-                const stats = JSON.parse(localStorage.getItem('resumeStats'));
-                
-                // Увеличиваем общий счетчик
-                stats.total = (stats.total || 0) + 1;
-                
-                // Добавляем запись в историю
-                stats.history = stats.history || [];
-                stats.history.push({
-                    date: todayStr,  // Сохраняем строку даты
-                    timestamp: timestamp
-                });
-                
-                // Сохраняем
-                localStorage.setItem('resumeStats', JSON.stringify(stats));
-                
-                // Пересчитываем статистику
-                recalculateStats();
-                
-                // Обновляем отображение
-                displayStats();
-            }
-            
-            function recalculateStats() {
-                const stats = JSON.parse(localStorage.getItem('resumeStats'));
-                if (!stats || !stats.history) return;
-                
-                const now = new Date();
-                const todayStr = now.toISOString().split('T')[0];
-                const oneDay = 24 * 60 * 60 * 1000;
-                const oneWeek = 7 * oneDay;
-                const oneMonth = 30 * oneDay;
-                const nowTime = now.getTime();
-                
-                // Сбрасываем счетчики
-                stats.today = 0;
-                stats.week = 0;
-                stats.month = 0;
-                
-                // Пересчитываем
-                stats.history.forEach(record => {
-                    const recordTime = record.timestamp;
-                    const timeDiff = nowTime - recordTime;
-                    
-                    // За месяц
-                    if (timeDiff <= oneMonth) {
-                        stats.month++;
-                    }
-                    
-                    // За неделю
-                    if (timeDiff <= oneWeek) {
-                        stats.week++;
-                    }
-                    
-                    // Сегодня - сравниваем строки дат
-                    if (record.date === todayStr) {
-                        stats.today++;
-                    }
-                });
-                
-                // Сохраняем пересчитанные данные
-                localStorage.setItem('resumeStats', JSON.stringify(stats));
-            }
-            
-            function displayStats() {
-                const stats = JSON.parse(localStorage.getItem('resumeStats'));
-                if (!stats) return;
-                
-                todayCount.textContent = stats.today || 0;
-                weekCount.textContent = stats.week || 0;
-                monthCount.textContent = stats.month || 0;
-                totalCount.textContent = stats.total || 0;
-            }
-            
-            function resetStats() {
-                if (confirm('Вы уверены, что хотите сбросить всю статистику?')) {
-                    const initialStats = {
-                        total: 0,
-                        today: 0,
-                        week: 0,
-                        month: 0,
-                        history: []
-                    };
-                    localStorage.setItem('resumeStats', JSON.stringify(initialStats));
-                    displayStats();
-                    showNotification('Статистика сброшена', 'success');
-                }
-            }
+            // Проверяем элементы статистики
+            console.log('Проверка элементов статистики:');
+            console.log('today-count:', todayCount);
+            console.log('week-count:', weekCount);
+            console.log('month-count:', monthCount);
+            console.log('total-count:', totalCount);
 
             // =================== УПРАВЛЕНИЕ МОДАЛЬНЫМИ ОКНАМИ ===================
             function showModal(modal) {
@@ -1451,7 +1550,7 @@
             });
 
             // Отслеживание состояния аутентификации
-            auth.onAuthStateChanged((user) => {
+            auth.onAuthStateChanged(async (user) => {
                 if (user) {
                     userInfo.style.display = 'flex';
                     authButtons.style.display = 'none';
@@ -1461,11 +1560,28 @@
                     const displayName = user.displayName || user.email.split('@')[0];
                     userName.textContent = displayName;
                     userAvatar.textContent = displayName.charAt(0).toUpperCase();
+                    
+                    // Инициализируем статистику при входе
+                    await initializeUserStats();
+                    await displayFirebaseStats();
+                    
+                    console.log('Пользователь вошел:', user.email);
+                    
                 } else {
                     userInfo.style.display = 'none';
                     authButtons.style.display = 'block';
                     loginPrompt.style.display = 'block';
                     mainContent.style.display = 'none';
+                    
+                    // Сбрасываем отображение статистики при выходе
+                    updateStatsDisplay({
+                        total: 0,
+                        today: 0,
+                        week: 0,
+                        month: 0
+                    });
+                    
+                    console.log('Пользователь вышел');
                 }
             });
 
@@ -1586,11 +1702,18 @@
                     if (result.success) {
                         currentResumeData = result.data;
                         displayStructuredResults(result.data);
-                        // Автоматически заполняем поле для анализа соответствия
                         resumeTextMatch.value = text;
-                        // ОБНОВЛЯЕМ СТАТИСТИКУ
-                        updateStats();
-                        showNotification('Резюме успешно проанализировано с помощью YandexGPT', 'success');
+                        
+                        // ОБНОВЛЯЕМ СТАТИСТИКУ В FIREBASE И НА СТРАНИЦЕ
+                        console.log('Начинаем обновление статистики...');
+                        const updatedStats = await updateFirebaseStats();
+                        
+                        if (updatedStats) {
+                            console.log('Статистика успешно обновлена:', updatedStats);
+                            showNotification('Резюме успешно проанализировано с помощью YandexGPT', 'success');
+                        } else {
+                            showNotification('Резюме проанализировано, но статистика не обновлена', 'warning');
+                        }
                     } else {
                         throw new Error(result.error);
                     }
@@ -1606,7 +1729,6 @@
             
             async function analyzeResumeWithCloudFunction(resumeText) {
                 try {
-                    // Обновленный промпт для структурированного анализа
                     const analysisPrompt = `
 Проанализируй резюме и извлеки информацию в структурированном JSON формате. Убери повторения и сгруппируй информацию логически.
 
@@ -1688,7 +1810,6 @@ ${resumeText}
                     try {
                         let jsonText = aiResponse;
                         
-                        // Очистка ответа от лишнего текста
                         if (aiResponse.includes('```json')) {
                             jsonText = aiResponse.split('```json')[1].split('```')[0].trim();
                         } else if (aiResponse.includes('```')) {
@@ -1696,8 +1817,6 @@ ${resumeText}
                         }
                         
                         const parsedData = JSON.parse(jsonText);
-                        
-                        // Создание структурированного вывода
                         html = createStructuredHTML(parsedData);
                         
                     } catch (parseError) {
@@ -1722,7 +1841,6 @@ ${resumeText}
             function createStructuredHTML(data) {
                 let html = '';
                 
-                // Заголовок с основной информацией
                 if (data.personal_info && data.personal_info.full_name) {
                     html += `
                         <div class="candidate-summary">
@@ -1757,7 +1875,6 @@ ${resumeText}
                     `;
                 }
 
-                // Контактная информация
                 if (data.personal_info && data.personal_info.contacts) {
                     const contacts = data.personal_info.contacts;
                     html += `
@@ -1787,7 +1904,6 @@ ${resumeText}
                     `;
                 }
 
-                // Образование
                 if (data.education && data.education.length > 0) {
                     html += `
                         <div class="result-section">
@@ -1809,7 +1925,6 @@ ${resumeText}
                     html += `</div>`;
                 }
 
-                // Опыт работы
                 if (data.experience && data.experience.length > 0) {
                     html += `
                         <div class="result-section">
@@ -1837,7 +1952,6 @@ ${resumeText}
                     html += `</div>`;
                 }
 
-                // Навыки
                 if (data.skills) {
                     html += `
                         <div class="result-section">
@@ -1880,7 +1994,6 @@ ${resumeText}
                     html += `</div>`;
                 }
 
-                // Ключевые квалификации
                 if (data.summary && data.summary.key_qualifications && data.summary.key_qualifications.length > 0) {
                     html += `
                         <div class="result-section">
@@ -1916,8 +2029,6 @@ ${resumeText}
                 matchBtn.disabled = true;
                 
                 try {
-                    // В реальном приложении здесь будет вызов Cloud Function
-                    // Для демонстрации используем имитацию
                     const matchResult = await analyzeJobMatch(resumeText, jobText);
                     displayMatchResults(matchResult);
                     showNotification('Анализ соответствия завершен', 'success');
@@ -1931,14 +2042,9 @@ ${resumeText}
                 }
             });
 
-            // Функция для анализа соответствия (имитация)
             async function analyzeJobMatch(resumeText, jobDescription) {
-                // В реальном приложении здесь будет вызов Cloud Function
-                // Сейчас используем имитацию для демонстрации
-                
                 return new Promise((resolve) => {
                     setTimeout(() => {
-                        // Имитация анализа на основе ключевых слов
                         const skills = analyzeSkillsMatch(resumeText, jobDescription);
                         const experience = analyzeExperienceMatch(resumeText, jobDescription);
                         const education = analyzeEducationMatch(resumeText, jobDescription);
@@ -1962,7 +2068,6 @@ ${resumeText}
                 });
             }
 
-            // Вспомогательные функции для анализа соответствия
             function analyzeSkillsMatch(resume, job) {
                 const techKeywords = [
                     'react', 'javascript', 'typescript', 'html', 'css', 'python', 'java', 
@@ -1993,7 +2098,6 @@ ${resumeText}
             }
 
             function analyzeExperienceMatch(resume, job) {
-                // Простая логика для демонстрации
                 const hasExperience = resume.toLowerCase().includes('опыт') || 
                                    resume.toLowerCase().includes('experience') ||
                                    /\d+\s*(год|лет|года)/.test(resume);
@@ -2001,7 +2105,7 @@ ${resumeText}
                 const jobRequiresExperience = job.toLowerCase().includes('опыт') || 
                                            job.toLowerCase().includes('experience');
                 
-                let score = 70; // Базовый балл
+                let score = 70;
                 
                 if (jobRequiresExperience && hasExperience) {
                     score = 85;
@@ -2026,7 +2130,7 @@ ${resumeText}
                 const jobRequiresEducation = job.toLowerCase().includes('образование') || 
                                           job.toLowerCase().includes('education');
                 
-                let score = 80; // Базовый балл
+                let score = 80;
                 
                 if (jobRequiresEducation && hasEducation) {
                     score = 90;
@@ -2101,43 +2205,35 @@ ${resumeText}
             }
 
             function displayMatchResults(result) {
-                // Общий балл
                 overallScore.textContent = `${result.overall}%`;
                 overallScore.className = 'score-value ' + getScoreClass(result.overall);
                 
-                // Описание
                 scoreDescription.textContent = getScoreDescription(result.overall);
                 
-                // Навыки
                 skillsScore.textContent = `${result.categories.skills.score}%`;
                 skillsProgress.style.width = `${result.categories.skills.score}%`;
                 skillsProgress.style.backgroundColor = getScoreColor(result.categories.skills.score);
                 displayMatchItems(skillsItems, result.categories.skills);
                 
-                // Опыт
                 experienceScore.textContent = `${result.categories.experience.score}%`;
                 experienceProgress.style.width = `${result.categories.experience.score}%`;
                 experienceProgress.style.backgroundColor = getScoreColor(result.categories.experience.score);
                 displayMatchItems(experienceItems, result.categories.experience);
                 
-                // Образование
                 educationScore.textContent = `${result.categories.education.score}%`;
                 educationProgress.style.width = `${result.categories.education.score}%`;
                 educationProgress.style.backgroundColor = getScoreColor(result.categories.education.score);
                 displayMatchItems(educationItems, result.categories.education);
                 
-                // Дополнительно
                 additionalScore.textContent = `${result.categories.additional.score}%`;
                 additionalProgress.style.width = `${result.categories.additional.score}%`;
                 additionalProgress.style.backgroundColor = getScoreColor(result.categories.additional.score);
                 displayMatchItems(additionalItems, result.categories.additional);
                 
-                // Рекомендации
                 recommendationsList.innerHTML = result.recommendations
                     .map(rec => `<li>${rec}</li>`)
                     .join('');
                 
-                // Показываем результаты
                 matchResult.style.display = 'block';
             }
 
@@ -2184,20 +2280,7 @@ ${resumeText}
                 return 'Низкое соответствие';
             }
 
-            // =================== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ===================
-            function showNotification(message, type) {
-                notification.textContent = message;
-                notification.className = 'notification ' + type;
-                notification.style.display = 'block';
-                
-                setTimeout(() => {
-                    notification.style.display = 'none';
-                }, 5000);
-            }
-            
             // =================== ИНИЦИАЛИЗАЦИЯ ===================
-            initStats();
-            
             // Пример резюме
             resumeText.value = `Иванов Иван Иванович
 
@@ -2243,7 +2326,9 @@ Email: ivanov@example.com
             resumeTextMatch.value = resumeText.value;
             
             // Обработчик кнопки сброса статистики
-            resetStatsBtn.addEventListener('click', resetStats);
+            resetStatsBtn.addEventListener('click', resetFirebaseStats);
+            
+            console.log('Инициализация завершена');
         });
     </script>
 </body>
